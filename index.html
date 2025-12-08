@@ -1,521 +1,885 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>مغامرة في المتحف المصري</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
     <!-- خطوط عربية مميزة -->
-    <link href="https://fonts.googleapis.com/css2?family=Marhey:wght@400;700&family=Readex+Pro:wght@400;600;700&display=swap" rel="stylesheet">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Marhey:wght@400;700&family=Readex+Pro:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
+      :root {
+        --book-w: 800px;
+        --book-h: 550px;
+        /* ألوان فرعونية احترافية */
+        --paper-color: #fcf6e5; /* لون بردي فاتح */
+        --egyptian-blue: #1a237e; /* أزرق ملكي */
+        --egyptian-gold: #c6a664; /* ذهبي أثري */
+        --egyptian-red: #8b3a3a; /* أحمر طوبي */
+        --text-color: #2d3436;
+        --font-main: "Readex Pro", sans-serif;
+        --font-title: "Marhey", cursive;
+      }
+
+      body {
+        background: linear-gradient(135deg, #101524 0%, #1f2a40 100%);
+        height: 100vh;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-family: var(--font-main);
+        overflow: hidden;
+        touch-action: none;
+      }
+
+      #canvas-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+      }
+
+      .stage {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        perspective: 2000px;
+        z-index: 10;
+        position: relative;
+      }
+
+      .book {
+        position: relative;
+        width: var(--book-w);
+        height: var(--book-h);
+        transform-style: preserve-3d;
+        transition: transform 0.8s;
+        transform: rotateX(25deg);
+        box-shadow: 0 50px 100px rgba(0, 0, 0, 0.6);
+      }
+
+      .page {
+        position: absolute;
+        width: 50%;
+        height: 100%;
+        top: 0;
+        right: 0;
+        transform-origin: left center;
+        transform-style: preserve-3d;
+        transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+        background-color: var(--paper-color);
+        background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+        border-radius: 0 8px 8px 0;
+        cursor: pointer;
+      }
+
+      .front,
+      .back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        backface-visibility: hidden;
+        overflow: hidden;
+        background-color: var(--paper-color);
+        border: 1px solid #d4c5a9;
+      }
+
+      .front {
+        z-index: 2;
+        border-radius: 0 8px 8px 0;
+        border-right: 2px solid #bfa87e;
+        background: linear-gradient(
+          to right,
+          #e6dcc3 0%,
+          var(--paper-color) 8%,
+          var(--paper-color) 100%
+        );
+      }
+
+      .back {
+        transform: rotateY(180deg);
+        z-index: 1;
+        border-radius: 8px 0 0 8px;
+        border-left: 2px solid #bfa87e;
+        background: linear-gradient(
+          to left,
+          #e6dcc3 0%,
+          var(--paper-color) 8%,
+          var(--paper-color) 100%
+        );
+        box-shadow: inset -5px 0 20px rgba(0, 0, 0, 0.05);
+      }
+
+      .front.no-border {
+        border-right: none;
+      }
+      .back.no-border {
+        border-left: none;
+      }
+      .page.flipped {
+        transform: rotateY(-180deg);
+      }
+
+      /* --- حاويات المحتوى (تم تعديل الحدود هنا) --- */
+      .text-container {
+        padding: 2rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 95%;
+        /* تم تخفيف الحدود لتكون أنيقة */
+        border: 3px solid var(--egyptian-gold);
+        outline: 2px dashed rgba(198, 166, 100, 0.5); /* تأثير خياطة خفيف */
+        outline-offset: -10px;
+        margin: 15px;
+        background-color: rgba(255, 255, 255, 0.6);
+        box-sizing: border-box;
+        border-radius: 20px;
+        box-shadow: inset 0 0 30px rgba(198, 166, 100, 0.1);
+      }
+
+      .page-header {
+        font-family: var(--font-title);
+        color: var(--egyptian-blue);
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+        background: rgba(198, 166, 100, 0.2);
+        padding: 5px 20px;
+        border-radius: 50px;
+        border: 1px solid var(--egyptian-gold);
+      }
+
+      .text-content {
+        font-family: var(--font-main);
+        font-size: 1.4rem;
+        line-height: 1.8;
+        color: #2c3e50;
+        font-weight: 700;
+      }
+
+      /* --- الفيديو --- */
+      .page-video-container {
+        width: 100%;
+        height: 100%;
+        background: #000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-left: 4px solid var(--egyptian-gold);
+      }
+      .page-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .video-fallback {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        width: 100%;
+        background: #2d3436;
+        color: white;
+        padding: 20px;
+      }
+
+      /* --- الغلاف --- */
+      .cover-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border: 6px solid var(--egyptian-gold);
+      }
+      .book-title {
+        position: absolute;
+        top: 12%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        text-align: center;
+        color: #fff;
+        font-family: var(--font-title);
+        font-size: 2.8rem;
+        font-weight: 800;
+        text-shadow: 0 4px 10px rgba(0, 0, 0, 0.8),
+          0 0 20px var(--egyptian-gold);
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.4);
+        border-radius: 15px;
+        padding: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+      }
+
+      .cover-buttons {
+        position: absolute;
+        bottom: 12%;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 20;
+        width: 65%;
+      }
+      .cover-btn {
+        background: linear-gradient(45deg, #1a237e, #283593);
+        color: #fff;
+        padding: 12px 20px;
+        font-size: 1.1rem;
+        font-weight: bold;
+        font-family: var(--font-main);
+        border: 2px solid var(--egyptian-gold);
+        border-radius: 50px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+      .cover-btn:hover {
+        transform: scale(1.03) translateY(-2px);
+        box-shadow: 0 6px 15px rgba(198, 166, 100, 0.4);
+        background: var(--egyptian-blue);
+      }
+      .cover-btn.start-main {
+        background: linear-gradient(45deg, #c6a664, #d4af37);
+        color: #1a237e;
+        border: none;
+        font-size: 1.3rem;
+        padding: 14px;
+        box-shadow: 0 0 20px rgba(198, 166, 100, 0.6);
+      }
+
+      /* --- البيانات --- */
+      .profile-card {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 20px;
+        border-radius: 20px;
+        width: 100%;
+        border: 1px solid var(--egyptian-gold);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      }
+      .profile-img {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 3px solid var(--egyptian-gold);
+        box-shadow: 0 0 15px rgba(198, 166, 100, 0.3);
+        object-fit: cover;
+        margin: 0 auto 10px;
+      }
+      .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border-bottom: 1px dashed #dcdcdc;
+        font-size: 0.95rem;
+      }
+      .info-label {
+        font-weight: bold;
+        color: var(--egyptian-blue);
+      }
+
+      /* --- التوصيف الجديد (محسن) --- */
+      .desc-wrapper {
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        padding-right: 5px; /* Scrollbar space */
+      }
+      /* تصميم شريط التمرير */
+      .desc-wrapper::-webkit-scrollbar {
+        width: 6px;
+      }
+      .desc-wrapper::-webkit-scrollbar-thumb {
+        background-color: var(--egyptian-gold);
+        border-radius: 10px;
+      }
+
+      .desc-box {
+        width: 100%;
+        text-align: right;
+      }
+      .desc-header {
+        color: var(--egyptian-blue);
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 1.8rem;
+        font-family: var(--font-title);
+        border-bottom: 2px solid var(--egyptian-gold);
+        padding-bottom: 10px;
+      }
+      .desc-section {
+        margin-bottom: 12px;
+        background: rgba(255, 255, 255, 0.5);
+        padding: 8px;
+        border-radius: 10px;
+        border-right: 4px solid var(--egyptian-gold);
+      }
+      .desc-key {
+        color: var(--egyptian-red);
+        font-weight: 900;
+        font-family: var(--font-title);
+        margin-left: 5px;
+        font-size: 1.1rem;
+      }
+      .desc-val {
+        color: #2d3436;
+        font-weight: 600;
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      /* --- لعبة الذاكرة الفرعونية --- */
+      .game-title {
+        color: var(--egyptian-blue);
+        font-family: var(--font-title);
+        font-size: 1.6rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+        text-shadow: 1px 1px 0 var(--egyptian-gold);
+      }
+      .memory-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        width: 100%;
+        margin-top: 15px;
+        perspective: 1000px;
+      }
+      .mem-card {
+        background: linear-gradient(135deg, #2c3e50, #1a237e);
+        height: 90px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        color: var(--egyptian-gold);
+        cursor: pointer;
+        border: 2px solid var(--egyptian-gold);
+        box-shadow: 0 4px 0 #00000030;
+        transition: transform 0.4s, box-shadow 0.2s;
+        position: relative;
+      }
+      .mem-card:hover {
+        transform: translateY(-3px);
+      }
+      .mem-card.flipped {
+        background: #fffbf2;
+        border-color: var(--egyptian-blue);
+        transform: rotateY(180deg);
+      }
+      .mem-card.flipped i {
+        transform: rotateY(180deg);
+        color: var(--egyptian-blue);
+      }
+      .mem-card.matched {
+        background: var(--egyptian-gold);
+        border-color: #fff;
+        animation: pulse-gold 1s infinite;
+      }
+      .mem-card.matched i {
+        color: #fff;
+        transform: rotateY(180deg);
+      }
+
+      @keyframes pulse-gold {
+        0% {
+          box-shadow: 0 0 0 0 rgba(198, 166, 100, 0.7);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(198, 166, 100, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(198, 166, 100, 0);
+        }
+      }
+
+      /* --- الأسئلة --- */
+      .quiz-option {
+        background: #fff;
+        border: 2px solid var(--egyptian-gold);
+        color: var(--text-color);
+        padding: 10px 15px;
+        margin: 6px;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: 0.3s;
+      }
+      .quiz-option:hover {
+        background: var(--paper-color);
+        transform: scale(1.02);
+      }
+      .quiz-option.correct {
+        background: #27ae60;
+        color: white;
+        border-color: #27ae60;
+      }
+      .quiz-option.wrong {
+        background: #c0392b;
+        color: white;
+        border-color: #c0392b;
+      }
+
+      /* --- أدوات التحكم --- */
+      .controls-bar {
+        position: fixed;
+        bottom: 20px;
+        background: rgba(26, 35, 126, 0.9);
+        padding: 10px 25px;
+        border-radius: 50px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        z-index: 1000;
+        border: 2px solid var(--egyptian-gold);
+      }
+      .ctrl-btn {
+        color: var(--egyptian-gold);
+        font-size: 1.4rem;
+        transition: 0.2s;
+      }
+      .ctrl-btn:hover {
+        color: #fff;
+        transform: scale(1.2);
+      }
+      .page-num {
+        color: #fff;
+        font-family: monospace;
+        font-weight: bold;
+      }
+
+      .score-board {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        background: white;
+        padding: 8px 15px;
+        border-radius: 30px;
+        font-weight: bold;
+        color: var(--egyptian-blue);
+        border: 2px solid var(--egyptian-gold);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      @media (max-width: 768px) {
         :root {
-            --book-w: 800px;
-            --book-h: 550px;
-            /* ألوان فرعونية احترافية */
-            --paper-color: #fcf6e5; /* لون بردي فاتح */
-            --egyptian-blue: #1a237e; /* أزرق ملكي */
-            --egyptian-gold: #c6a664; /* ذهبي أثري */
-            --egyptian-red: #8b3a3a; /* أحمر طوبي */
-            --text-color: #2d3436; 
-            --font-main: 'Readex Pro', sans-serif;
-            --font-title: 'Marhey', cursive;
-        }
-
-        body {
-            background: linear-gradient(135deg, #101524 0%, #1f2a40 100%);
-            height: 100vh;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            font-family: var(--font-main);
-            overflow: hidden;
-            touch-action: none;
-        }
-
-        #canvas-container {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; 
-        }
-
-        .stage {
-            width: 100%; height: 100%;
-            display: flex; justify-content: center; align-items: center;
-            perspective: 2000px; z-index: 10; position: relative;
-        }
-
-        .book {
-            position: relative;
-            width: var(--book-w);
-            height: var(--book-h);
-            transform-style: preserve-3d;
-            transition: transform 0.8s;
-            transform: rotateX(25deg); 
-            box-shadow: 0 50px 100px rgba(0,0,0,0.6);
-        }
-
-        .page {
-            position: absolute;
-            width: 50%; height: 100%;
-            top: 0; right: 0; 
-            transform-origin: left center;
-            transform-style: preserve-3d;
-            transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
-            background-color: var(--paper-color);
-            background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
-            border-radius: 0 8px 8px 0;
-            cursor: pointer;
-        }
-
-        .front, .back {
-            position: absolute; width: 100%; height: 100%; top: 0; left: 0;
-            backface-visibility: hidden; overflow: hidden;
-            background-color: var(--paper-color);
-            border: 1px solid #d4c5a9;
-        }
-
-        .front {
-            z-index: 2; border-radius: 0 8px 8px 0;
-            border-right: 2px solid #bfa87e;
-            background: linear-gradient(to right, #e6dcc3 0%, var(--paper-color) 8%, var(--paper-color) 100%);
-        }
-
-        .back {
-            transform: rotateY(180deg); z-index: 1;
-            border-radius: 8px 0 0 8px;
-            border-left: 2px solid #bfa87e;
-            background: linear-gradient(to left, #e6dcc3 0%, var(--paper-color) 8%, var(--paper-color) 100%);
-            box-shadow: inset -5px 0 20px rgba(0,0,0,0.05);
-        }
-
-        .front.no-border { border-right: none; }
-        .back.no-border { border-left: none; }
-        .page.flipped { transform: rotateY(-180deg); }
-
-        /* --- حاويات المحتوى (تم تعديل الحدود هنا) --- */
-        .text-container {
-            padding: 2rem;
-            text-align: center;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            height: 95%;
-            /* تم تخفيف الحدود لتكون أنيقة */
-            border: 3px solid var(--egyptian-gold);
-            outline: 2px dashed rgba(198, 166, 100, 0.5); /* تأثير خياطة خفيف */
-            outline-offset: -10px;
-            margin: 15px;
-            background-color: rgba(255,255,255,0.6);
-            box-sizing: border-box;
-            border-radius: 20px;
-            box-shadow: inset 0 0 30px rgba(198, 166, 100, 0.1);
-        }
-        
-        .page-header {
-            font-family: var(--font-title);
-            color: var(--egyptian-blue);
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            background: rgba(198, 166, 100, 0.2);
-            padding: 5px 20px;
-            border-radius: 50px;
-            border: 1px solid var(--egyptian-gold);
-        }
-
-        .text-content {
-            font-family: var(--font-main);
-            font-size: 1.4rem; 
-            line-height: 1.8;
-            color: #2c3e50;
-            font-weight: 700;
-        }
-
-        /* --- الفيديو --- */
-        .page-video-container {
-            width: 100%; height: 100%;
-            background: #000;
-            display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
-            border-left: 4px solid var(--egyptian-gold);
-        }
-        .page-video { width: 100%; height: 100%; object-fit: cover; }
-        .video-fallback {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100%; width: 100%; background: #2d3436; color: white; padding: 20px;
-        }
-
-        /* --- الغلاف --- */
-        .cover-img {
-            width: 100%; height: 100%; object-fit: cover;
-            border: 6px solid var(--egyptian-gold);
+          --book-w: 92vw;
+          --book-h: 60vw;
         }
         .book-title {
-            position: absolute; top: 12%; left: 50%; transform: translateX(-50%);
-            width: 90%; text-align: center;
-            color: #fff;
-            font-family: var(--font-title);
-            font-size: 2.8rem; font-weight: 800;
-            text-shadow: 0 4px 10px rgba(0,0,0,0.8), 0 0 20px var(--egyptian-gold);
-            z-index: 10;
-            background: rgba(0,0,0,0.4); 
-            border-radius: 15px; padding: 15px;
-            border: 1px solid rgba(255,255,255,0.3);
+          font-size: 1.8rem;
+          padding: 10px;
+          top: 10%;
         }
-
+        .text-container {
+          padding: 1rem;
+          margin: 8px;
+          border-width: 2px;
+        }
+        .text-content {
+          font-size: 0.95rem;
+          line-height: 1.4;
+        }
         .cover-buttons {
-            position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%);
-            display: flex; flex-direction: column; gap: 12px; z-index: 20; width: 65%;
+          width: 85%;
+          bottom: 8%;
+          gap: 10px;
         }
         .cover-btn {
-            background: linear-gradient(45deg, #1a237e, #283593);
-            color: #fff; padding: 12px 20px;
-            font-size: 1.1rem; font-weight: bold; font-family: var(--font-main);
-            border: 2px solid var(--egyptian-gold);
-            border-radius: 50px; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-        }
-        .cover-btn:hover { transform: scale(1.03) translateY(-2px); box-shadow: 0 6px 15px rgba(198, 166, 100, 0.4); background: var(--egyptian-blue); }
-        .cover-btn.start-main {
-            background: linear-gradient(45deg, #c6a664, #d4af37);
-            color: #1a237e; border: none; font-size: 1.3rem; padding: 14px;
-            box-shadow: 0 0 20px rgba(198, 166, 100, 0.6);
-        }
-
-        /* --- البيانات --- */
-        .profile-card {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 20px; border-radius: 20px; width: 100%;
-            border: 1px solid var(--egyptian-gold);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-        .profile-img {
-            width: 100px; height: 100px; border-radius: 50%;
-            border: 3px solid var(--egyptian-gold);
-            box-shadow: 0 0 15px rgba(198, 166, 100, 0.3);
-            object-fit: cover; margin: 0 auto 10px;
-        }
-        .info-row {
-            display: flex; justify-content: space-between; padding: 8px 10px;
-            border-bottom: 1px dashed #dcdcdc; font-size: 0.95rem;
-        }
-        .info-label { font-weight: bold; color: var(--egyptian-blue); }
-
-        /* --- التوصيف الجديد (محسن) --- */
-        .desc-wrapper {
-            width: 100%; height: 100%; overflow-y: auto;
-            padding-right: 5px; /* Scrollbar space */
-        }
-        /* تصميم شريط التمرير */
-        .desc-wrapper::-webkit-scrollbar { width: 6px; }
-        .desc-wrapper::-webkit-scrollbar-thumb { background-color: var(--egyptian-gold); border-radius: 10px; }
-        
-        .desc-box {
-            width: 100%; text-align: right;
-        }
-        .desc-header {
-            color: var(--egyptian-blue); text-align: center; 
-            margin-bottom: 20px; font-size: 1.8rem; font-family: var(--font-title);
-            border-bottom: 2px solid var(--egyptian-gold); padding-bottom: 10px;
-        }
-        .desc-section { 
-            margin-bottom: 12px; 
-            background: rgba(255,255,255,0.5); 
-            padding: 8px; 
-            border-radius: 10px;
-            border-right: 4px solid var(--egyptian-gold);
-        }
-        .desc-key { 
-            color: var(--egyptian-red); font-weight: 900; 
-            font-family: var(--font-title); margin-left: 5px;
-            font-size: 1.1rem;
-        }
-        .desc-val {
-            color: #2d3436; font-weight: 600; font-size: 0.95rem; line-height: 1.5;
-        }
-
-        /* --- لعبة الذاكرة الفرعونية --- */
-        .game-title {
-            color: var(--egyptian-blue); font-family: var(--font-title);
-            font-size: 1.6rem; font-weight: 800; margin-bottom: 1rem;
-            text-shadow: 1px 1px 0 var(--egyptian-gold);
-        }
-        .memory-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr);
-            gap: 12px; width: 100%; margin-top: 15px; perspective: 1000px;
+          font-size: 0.9rem;
+          padding: 10px;
         }
         .mem-card {
-            background: linear-gradient(135deg, #2c3e50, #1a237e);
-            height: 90px; border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2.2rem; color: var(--egyptian-gold);
-            cursor: pointer;
-            border: 2px solid var(--egyptian-gold);
-            box-shadow: 0 4px 0 #00000030;
-            transition: transform 0.4s, box-shadow 0.2s;
-            position: relative;
+          height: 60px;
+          font-size: 1.5rem;
         }
-        .mem-card:hover { transform: translateY(-3px); }
-        .mem-card.flipped {
-            background: #fffbf2;
-            border-color: var(--egyptian-blue);
-            transform: rotateY(180deg);
+        .info-row {
+          font-size: 0.8rem;
+          padding: 4px;
         }
-        .mem-card.flipped i { transform: rotateY(180deg); color: var(--egyptian-blue); }
-        .mem-card.matched {
-            background: var(--egyptian-gold);
-            border-color: #fff;
-            animation: pulse-gold 1s infinite;
-        }
-        .mem-card.matched i { color: #fff; transform: rotateY(180deg); }
-
-        @keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(198, 166, 100, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(198, 166, 100, 0); } 100% { box-shadow: 0 0 0 0 rgba(198, 166, 100, 0); } }
-
-        /* --- الأسئلة --- */
-        .quiz-option {
-            background: #fff; border: 2px solid var(--egyptian-gold);
-            color: var(--text-color); padding: 10px 15px; margin: 6px;
-            border-radius: 50px; cursor: pointer; font-weight: 600;
-            transition: 0.3s;
-        }
-        .quiz-option:hover { background: var(--paper-color); transform: scale(1.02); }
-        .quiz-option.correct { background: #27ae60; color: white; border-color: #27ae60; }
-        .quiz-option.wrong { background: #c0392b; color: white; border-color: #c0392b; }
-
-        /* --- أدوات التحكم --- */
         .controls-bar {
-            position: fixed; bottom: 20px;
-            background: rgba(26, 35, 126, 0.9);
-            padding: 10px 25px; border-radius: 50px;
-            display: flex; gap: 20px; align-items: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4); z-index: 1000;
-            border: 2px solid var(--egyptian-gold);
+          padding: 8px 15px;
+          gap: 15px;
+          bottom: 15px;
         }
-        .ctrl-btn { color: var(--egyptian-gold); font-size: 1.4rem; transition: 0.2s; }
-        .ctrl-btn:hover { color: #fff; transform: scale(1.2); }
-        .page-num { color: #fff; font-family: monospace; font-weight: bold; }
-
-        .score-board {
-            position: fixed; top: 20px; left: 20px;
-            background: white; padding: 8px 15px; border-radius: 30px;
-            font-weight: bold; color: var(--egyptian-blue);
-            border: 2px solid var(--egyptian-gold);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 2000;
-            display: flex; align-items: center; gap: 8px;
+        .desc-header {
+          font-size: 1.4rem;
         }
-
-        @media (max-width: 768px) {
-            :root { --book-w: 92vw; --book-h: 60vw; }
-            .book-title { font-size: 1.8rem; padding: 10px; top: 10%; }
-            .text-container { padding: 1rem; margin: 8px; border-width: 2px; }
-            .text-content { font-size: 0.95rem; line-height: 1.4; }
-            .cover-buttons { width: 85%; bottom: 8%; gap: 10px; }
-            .cover-btn { font-size: 0.9rem; padding: 10px; }
-            .mem-card { height: 60px; font-size: 1.5rem; }
-            .info-row { font-size: 0.8rem; padding: 4px; }
-            .controls-bar { padding: 8px 15px; gap: 15px; bottom: 15px; }
-            .desc-header { font-size: 1.4rem; }
-            .desc-key { font-size: 1rem; }
+        .desc-key {
+          font-size: 1rem;
         }
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <div id="canvas-container"></div>
 
     <div class="score-board">
-        <i class="fas fa-gem text-yellow-500 animate-pulse"></i>
-        <span>الكنز: </span>
-        <span id="scoreVal">0</span>
+      <i class="fas fa-gem text-yellow-500 animate-pulse"></i>
+      <span>الكنز: </span>
+      <span id="scoreVal">0</span>
     </div>
 
     <div class="stage">
-        <div class="book" id="book"></div>
+      <div class="book" id="book"></div>
     </div>
 
     <audio id="sfxWin" src="effect/achivement.mp3"></audio>
     <audio id="sfxWrong" src="effect/wrong.mp3"></audio>
 
     <div class="controls-bar">
-        <button class="ctrl-btn" onclick="nextPage()"><i class="fas fa-arrow-right"></i></button>
-        <button class="ctrl-btn" onclick="togglePlayPause()" id="playPauseBtn"><i class="fas fa-play"></i></button>
-        <button class="ctrl-btn" onclick="toggleMute()" id="muteBtn"><i class="fas fa-volume-up"></i></button>
-        <span class="page-num" id="pageIndicator">0 / 0</span>
-        <button class="ctrl-btn" onclick="prevPage()"><i class="fas fa-arrow-left"></i></button>
+      <button class="ctrl-btn" onclick="nextPage()">
+        <i class="fas fa-arrow-right"></i>
+      </button>
+      <button class="ctrl-btn" onclick="togglePlayPause()" id="playPauseBtn">
+        <i class="fas fa-play"></i>
+      </button>
+      <button class="ctrl-btn" onclick="toggleMute()" id="muteBtn">
+        <i class="fas fa-volume-up"></i>
+      </button>
+      <span class="page-num" id="pageIndicator">0 / 0</span>
+      <button class="ctrl-btn" onclick="prevPage()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
     </div>
 
-    <audio id="globalAudio" style="display:none"></audio>
+    <audio id="globalAudio" style="display: none"></audio>
 
     <script>
-        function initThreeJS() {
-            const container = document.getElementById('canvas-container');
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x1a1a1a); 
-            scene.fog = new THREE.Fog(0x1a1a1a, 20, 100);
-            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const isMobile = window.innerWidth < 768;
-            camera.position.set(0, isMobile ? 28 : 22, isMobile ? 35 : 28); 
-            camera.lookAt(0, -2, 0);
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true; 
-            container.appendChild(renderer.domElement);
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4); 
-            scene.add(ambientLight);
-            const spotLight = new THREE.SpotLight(0xffd700, 1); 
-            spotLight.position.set(-15, 30, 15);
-            spotLight.castShadow = true;
-            scene.add(spotLight);
-            const floorGeom = new THREE.PlaneGeometry(200, 200);
-            const floorMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.7 });
-            const floor = new THREE.Mesh(floorGeom, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.position.y = -20;
-            floor.receiveShadow = true;
-            scene.add(floor);
-            const deskGroup = new THREE.Group();
-            const topGeom = new THREE.BoxGeometry(90, 2, 50);
-            const woodMaterial = new THREE.MeshStandardMaterial({ color: 0x5d4037, roughness: 0.6 });
-            const deskTop = new THREE.Mesh(topGeom, woodMaterial);
-            deskTop.position.y = -6; 
-            deskTop.receiveShadow = true;
-            deskGroup.add(deskTop);
-            const legGeom = new THREE.CylinderGeometry(2, 2, 15, 16);
-            const leg1 = new THREE.Mesh(legGeom, woodMaterial); leg1.position.set(-40, -13, 20);
-            const leg2 = new THREE.Mesh(legGeom, woodMaterial); leg2.position.set(40, -13, 20);
-            const leg3 = new THREE.Mesh(legGeom, woodMaterial); leg3.position.set(-40, -13, -20);
-            const leg4 = new THREE.Mesh(legGeom, woodMaterial); leg4.position.set(40, -13, -20);
-            deskGroup.add(leg1); deskGroup.add(leg2); deskGroup.add(leg3); deskGroup.add(leg4);
-            scene.add(deskGroup);
-            const vaseGeom = new THREE.LatheGeometry([
-                new THREE.Vector2(0,0), new THREE.Vector2(3,0), new THREE.Vector2(5,2), 
-                new THREE.Vector2(2,5), new THREE.Vector2(3,10), new THREE.Vector2(0,10)
-            ], 16);
-            const vaseMat = new THREE.MeshStandardMaterial({ color: 0xcd7f32 }); 
-            const vase = new THREE.Mesh(vaseGeom, vaseMat);
-            vase.position.set(-35, -5, -10);
-            vase.castShadow = true;
-            scene.add(vase);
-            const animate = () => {
-                requestAnimationFrame(animate);
-                renderer.render(scene, camera);
-            };
-            animate();
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-                const isMob = window.innerWidth < 768;
-                camera.position.z = isMob ? 35 : 28;
-                camera.position.y = isMob ? 28 : 22;
-            });
-        }
-        initThreeJS();
-
-        const assets = {
-            images: {
-                cover: 'https://drive.google.com/thumbnail?id=1gDlsBv4bVoL_RvrMC0a4Qlyx4p2maAov&sz=w1000',
-                back: 'https://drive.google.com/thumbnail?id=12qzceeMXYlifaZDxzYFEnE9YibPLmJ1S&sz=w1000',
-                profile: 'https://lh3.googleusercontent.com/d/1Ay0MNO_hK5APzx6AhmEdVMCVx5uxxpc8'
-            },
-            audio: {
-                1: 'sound/1.mp3', 2: 'sound/2.mp3', 3: 'sound/3.mp3', 5: 'sound/5.mp3',
-                6: 'sound/6.mp3', 7: 'sound/7.mp3', 8: 'sound/8.mp3', 9: 'sound/9.mp3',
-                11: 'sound/11.mp3', 12: 'sound/12.mp3', 13: 'sound/13.mp3'
-            },
-            video: {
-                1: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/1_nzf0au.mp4',
-                2: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/2_iagdwc.mp4',
-                3: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/3_w74ims.mp4',
-                4: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/4_a4ctee.mp4',
-                5: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/5_ddmu0h.mp4',
-                6: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/6_w5q6ne.mp4',
-                7: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/7_brz0sh.mp4',
-                8: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/8_xslb1x.mp4',
-                9: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/9_gdgue5.mp4', 
-                10: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/10_kuopqc.mp4',
-                11: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/11_n2lkjv.mp4',
-                12: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/12_l7awif.mp4',
-                13: 'https://res.cloudinary.com/dhvuw8yog/video/upload/video/13_f2bg0v.mp4'
-            }
+      function initThreeJS() {
+        const container = document.getElementById("canvas-container");
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
+        scene.fog = new THREE.Fog(0x1a1a1a, 20, 100);
+        const camera = new THREE.PerspectiveCamera(
+          45,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        const isMobile = window.innerWidth < 768;
+        camera.position.set(0, isMobile ? 28 : 22, isMobile ? 35 : 28);
+        camera.lookAt(0, -2, 0);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+        const spotLight = new THREE.SpotLight(0xffd700, 1);
+        spotLight.position.set(-15, 30, 15);
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+        const floorGeom = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({
+          color: 0x3e2723,
+          roughness: 0.7,
+        });
+        const floor = new THREE.Mesh(floorGeom, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -20;
+        floor.receiveShadow = true;
+        scene.add(floor);
+        const deskGroup = new THREE.Group();
+        const topGeom = new THREE.BoxGeometry(90, 2, 50);
+        const woodMaterial = new THREE.MeshStandardMaterial({
+          color: 0x5d4037,
+          roughness: 0.6,
+        });
+        const deskTop = new THREE.Mesh(topGeom, woodMaterial);
+        deskTop.position.y = -6;
+        deskTop.receiveShadow = true;
+        deskGroup.add(deskTop);
+        const legGeom = new THREE.CylinderGeometry(2, 2, 15, 16);
+        const leg1 = new THREE.Mesh(legGeom, woodMaterial);
+        leg1.position.set(-40, -13, 20);
+        const leg2 = new THREE.Mesh(legGeom, woodMaterial);
+        leg2.position.set(40, -13, 20);
+        const leg3 = new THREE.Mesh(legGeom, woodMaterial);
+        leg3.position.set(-40, -13, -20);
+        const leg4 = new THREE.Mesh(legGeom, woodMaterial);
+        leg4.position.set(40, -13, -20);
+        deskGroup.add(leg1);
+        deskGroup.add(leg2);
+        deskGroup.add(leg3);
+        deskGroup.add(leg4);
+        scene.add(deskGroup);
+        const vaseGeom = new THREE.LatheGeometry(
+          [
+            new THREE.Vector2(0, 0),
+            new THREE.Vector2(3, 0),
+            new THREE.Vector2(5, 2),
+            new THREE.Vector2(2, 5),
+            new THREE.Vector2(3, 10),
+            new THREE.Vector2(0, 10),
+          ],
+          16
+        );
+        const vaseMat = new THREE.MeshStandardMaterial({ color: 0xcd7f32 });
+        const vase = new THREE.Mesh(vaseGeom, vaseMat);
+        vase.position.set(-35, -5, -10);
+        vase.castShadow = true;
+        scene.add(vase);
+        const animate = () => {
+          requestAnimationFrame(animate);
+          renderer.render(scene, camera);
         };
+        animate();
+        window.addEventListener("resize", () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          const isMob = window.innerWidth < 768;
+          camera.position.z = isMob ? 35 : 28;
+          camera.position.y = isMob ? 28 : 22;
+        });
+      }
+      initThreeJS();
 
-        const storyConfig = [
-            { type: 'cover' }, 
-            { type: 'personal-data' },
-            { type: 'book-desc' },
-            { type: 'video-page', id: 1 }, 
-            { id: 1, text: "استيقظ أمجد بحماس شديد، اليوم سيزور مكاناً مدهشاً مع صديقه القط الذكي 'مشمش'." },
-            { type: 'video-page', id: 2 },
-            { id: 2, text: "وصل الصديقان أمام المتحف الضخم. قال مشمش: 'أنا مرشدك اليوم لاستكشاف كنوز مصر!'" },
-            { type: 'quiz-part', data: { question: "كيف كان شعور أمجد في الصباح؟", options: ["حزين", "متحمس", "غاضب"], correct: 1 } },
-            { type: 'quiz-part', data: { question: "من هو مرافق أمجد في الرحلة؟", options: ["الكلب بوبي", "القط مشمش", "العصفور تويتي"], correct: 1 } },
-            { type: 'video-page', id: 3 },
-            { id: 3, text: "وقف أمجد مبهوراً أمام تمثال رمسيس الثاني العظيم." },
-            { type: 'video-page', id: 4 },
-            { id: 5, text: "قال مشمش: 'هذا الملك حكم مصر لأكثر من 60 عاماً وكان قوياً ومحبوباً.'" },
-            { type: 'video-page', id: 6 },
-            { id: 6, text: "دخلا غرفة الكنوز الذهبية، ورأى أمجد قناعاً يلمع بشدة." },
-            { type: 'video-page', id: 7 },
-            { id: 7, text: "'إنه قناع الملك توت عنخ آمون!'، قال مشمش، 'مصنوع من الذهب الخالص!'" },
-            { type: 'quiz-part', data: { question: "من ماذا صُنع القناع؟", options: ["الخشب", "الحديد", "الذهب الخالص"], correct: 2 } },
-            { type: 'quiz-part', data: { question: "ما اسم الملك صاحب القناع الذهبي؟", options: ["أحمس", "توت عنخ آمون", "خوفو"], correct: 1 } },
-            { type: 'video-page', id: 8 },
-            { id: 8, text: "شاهد أمجد التابوت المزخرف وسأل عن سر بقاء المومياوات." },
-            { type: 'video-page', id: 9 },
-            { id: 9, text: "شرح مشمش عملية 'التحنيط' التي تحفظ الأجسام لآلاف السنين." },
-            { type: 'video-page', id: 10 },
-            { id: 11, text: "لعب أمجد ومشمش لعبة البحث عن الكنوز على الخريطة القديمة." },
-            { type: 'quiz-part', data: { question: "أين توجد الأهرامات؟", options: ["في البحر", "في الجيزة", "في المتحف"], correct: 1 } },
-            { type: 'quiz-part', data: { question: "ماذا وجد أمجد في الخريطة؟", options: ["كنز مخفي", "سيارة", "كرة"], correct: 0 } },
-            { type: 'video-page', id: 12 },
-            { id: 12, text: "رأى أمجد المومياوات الحقيقية التي حفظها المصريون ببراعة." },
-            { type: 'video-page', id: 13 },
-            { id: 13, text: "تعرف أمجد على أدوات الزراعة والطهي، وتمثال الإله 'أنوبيس'." },
-            { type: 'memory-game', cards: ['fas fa-ankh', 'fas fa-eye', 'fas fa-scroll'] },
-            { type: 'memory-game', cards: ['fas fa-bug', 'fas fa-feather', 'fas fa-cat'] },
-            { type: 'back-cover' }
-        ];
+      const assets = {
+        images: {
+          cover:
+            "https://drive.google.com/thumbnail?id=1gDlsBv4bVoL_RvrMC0a4Qlyx4p2maAov&sz=w1000",
+          back: "https://drive.google.com/thumbnail?id=12qzceeMXYlifaZDxzYFEnE9YibPLmJ1S&sz=w1000",
+          profile:
+            "https://lh3.googleusercontent.com/d/1Ay0MNO_hK5APzx6AhmEdVMCVx5uxxpc8",
+        },
+        audio: {
+          1: "sound/1.mp3",
+          2: "sound/2.mp3",
+          3: "sound/3.mp3",
+          5: "sound/5.mp3",
+          6: "sound/6.mp3",
+          7: "sound/7.mp3",
+          8: "sound/8.mp3",
+          9: "sound/9.mp3",
+          11: "sound/11.mp3",
+          12: "sound/12.mp3",
+          13: "sound/13.mp3",
+        },
+        video: {
+          1: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/1_nzf0au.mp4",
+          2: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/2_iagdwc.mp4",
+          3: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/3_w74ims.mp4",
+          4: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/4_a4ctee.mp4",
+          5: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/5_ddmu0h.mp4",
+          6: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/6_w5q6ne.mp4",
+          7: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/7_brz0sh.mp4",
+          8: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/8_xslb1x.mp4",
+          9: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/9_gdgue5.mp4",
+          10: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/10_kuopqc.mp4",
+          11: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/11_n2lkjv.mp4",
+          12: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/12_l7awif.mp4",
+          13: "https://res.cloudinary.com/dhvuw8yog/video/upload/video/13_f2bg0v.mp4",
+        },
+      };
 
-        let currentPage = 0; 
-        let score = 0;
-        const bookEl = document.getElementById('book');
-        const audioEl = document.getElementById('globalAudio');
-        let isPlaying = false; 
-        let firstInteraction = false; 
-        let flippedCards = [];
-        let locked = false;
+      const storyConfig = [
+        { type: "cover" },
+        { type: "personal-data" },
+        { type: "book-desc" },
+        { type: "video-page", id: 1 },
+        {
+          id: 1,
+          text: "استيقظ أمجد بحماس شديد، اليوم سيزور مكاناً مدهشاً مع صديقه القط الذكي 'مشمش'.",
+        },
+        { type: "video-page", id: 2 },
+        {
+          id: 2,
+          text: "وصل الصديقان أمام المتحف الضخم. قال مشمش: 'أنا مرشدك اليوم لاستكشاف كنوز مصر!'",
+        },
+        {
+          type: "quiz-part",
+          data: {
+            question: "كيف كان شعور أمجد في الصباح؟",
+            options: ["حزين", "متحمس", "غاضب"],
+            correct: 1,
+          },
+        },
+        {
+          type: "quiz-part",
+          data: {
+            question: "من هو مرافق أمجد في الرحلة؟",
+            options: ["الكلب بوبي", "القط مشمش", "العصفور تويتي"],
+            correct: 1,
+          },
+        },
+        { type: "video-page", id: 3 },
+        { id: 3, text: "وقف أمجد مبهوراً أمام تمثال رمسيس الثاني العظيم." },
+        { type: "video-page", id: 4 },
+        {
+          id: 5,
+          text: "قال مشمش: 'هذا الملك حكم مصر لأكثر من 60 عاماً وكان قوياً ومحبوباً.'",
+        },
+        { type: "video-page", id: 6 },
+        {
+          id: 6,
+          text: "دخلا غرفة الكنوز الذهبية، ورأى أمجد قناعاً يلمع بشدة.",
+        },
+        { type: "video-page", id: 7 },
+        {
+          id: 7,
+          text: "'إنه قناع الملك توت عنخ آمون!'، قال مشمش، 'مصنوع من الذهب الخالص!'",
+        },
+        {
+          type: "quiz-part",
+          data: {
+            question: "من ماذا صُنع القناع؟",
+            options: ["الخشب", "الحديد", "الذهب الخالص"],
+            correct: 2,
+          },
+        },
+        {
+          type: "quiz-part",
+          data: {
+            question: "ما اسم الملك صاحب القناع الذهبي؟",
+            options: ["أحمس", "توت عنخ آمون", "خوفو"],
+            correct: 1,
+          },
+        },
+        { type: "video-page", id: 8 },
+        {
+          id: 8,
+          text: "شاهد أمجد التابوت المزخرف وسأل عن سر بقاء المومياوات.",
+        },
+        { type: "video-page", id: 9 },
+        {
+          id: 9,
+          text: "شرح مشمش عملية 'التحنيط' التي تحفظ الأجسام لآلاف السنين.",
+        },
+        { type: "video-page", id: 10 },
+        {
+          id: 11,
+          text: "لعب أمجد ومشمش لعبة البحث عن الكنوز على الخريطة القديمة.",
+        },
+        {
+          type: "quiz-part",
+          data: {
+            question: "أين توجد الأهرامات؟",
+            options: ["في البحر", "في الجيزة", "في المتحف"],
+            correct: 1,
+          },
+        },
+        {
+          type: "quiz-part",
+          data: {
+            question: "ماذا وجد أمجد في الخريطة؟",
+            options: ["كنز مخفي", "سيارة", "كرة"],
+            correct: 0,
+          },
+        },
+        { type: "video-page", id: 12 },
+        {
+          id: 12,
+          text: "رأى أمجد المومياوات الحقيقية التي حفظها المصريون ببراعة.",
+        },
+        { type: "video-page", id: 13 },
+        {
+          id: 13,
+          text: "تعرف أمجد على أدوات الزراعة والطهي، وتمثال الإله 'أنوبيس'.",
+        },
+        {
+          type: "memory-game",
+          cards: ["fas fa-ankh", "fas fa-eye", "fas fa-scroll"],
+        },
+        {
+          type: "memory-game",
+          cards: ["fas fa-bug", "fas fa-feather", "fas fa-cat"],
+        },
+        { type: "back-cover" },
+      ];
 
-        function initBook() {
-            bookEl.innerHTML = '';
-            if (storyConfig.length % 2 !== 0) storyConfig.push({type: 'blank'});
-            const numSheets = Math.ceil(storyConfig.length / 2);
-            for (let i = 0; i < numSheets; i++) {
-                const dataFront = storyConfig[i * 2];
-                const dataBack = storyConfig[i * 2 + 1];
-                const pageDiv = document.createElement('div');
-                pageDiv.className = `page`;
-                pageDiv.id = `page-${i}`;
-                pageDiv.style.zIndex = numSheets - i; 
-                let frontHTML = generateFace(dataFront, i, 'front');
-                let frontClass = 'front';
-                if(dataFront && ['cover', 'personal-data', 'book-desc', 'memory-game', 'video-page', 'quiz-part'].includes(dataFront.type)) frontClass += ' no-border';
-                let backHTML = generateFace(dataBack, i, 'back');
-                let backClass = 'back';
-                if(dataBack && ['personal-data', 'book-desc', 'memory-game', 'video-page', 'quiz-part'].includes(dataBack.type)) backClass += ' no-border';
-                pageDiv.innerHTML = `<div class="${frontClass}">${frontHTML}</div><div class="${backClass}">${backHTML}</div>`;
-                bookEl.appendChild(pageDiv);
-            }
+      let currentPage = 0;
+      let score = 0;
+      const bookEl = document.getElementById("book");
+      const audioEl = document.getElementById("globalAudio");
+      let isPlaying = false;
+      let firstInteraction = false;
+      let flippedCards = [];
+      let locked = false;
+
+      function initBook() {
+        bookEl.innerHTML = "";
+        if (storyConfig.length % 2 !== 0) storyConfig.push({ type: "blank" });
+        const numSheets = Math.ceil(storyConfig.length / 2);
+        for (let i = 0; i < numSheets; i++) {
+          const dataFront = storyConfig[i * 2];
+          const dataBack = storyConfig[i * 2 + 1];
+          const pageDiv = document.createElement("div");
+          pageDiv.className = `page`;
+          pageDiv.id = `page-${i}`;
+          pageDiv.style.zIndex = numSheets - i;
+          let frontHTML = generateFace(dataFront, i, "front");
+          let frontClass = "front";
+          if (
+            dataFront &&
+            [
+              "cover",
+              "personal-data",
+              "book-desc",
+              "memory-game",
+              "video-page",
+              "quiz-part",
+            ].includes(dataFront.type)
+          )
+            frontClass += " no-border";
+          let backHTML = generateFace(dataBack, i, "back");
+          let backClass = "back";
+          if (
+            dataBack &&
+            [
+              "personal-data",
+              "book-desc",
+              "memory-game",
+              "video-page",
+              "quiz-part",
+            ].includes(dataBack.type)
+          )
+            backClass += " no-border";
+          pageDiv.innerHTML = `<div class="${frontClass}">${frontHTML}</div><div class="${backClass}">${backHTML}</div>`;
+          bookEl.appendChild(pageDiv);
         }
+      }
 
-        function generateFace(data, sheetIdx, face) {
-            if(!data) return '';
-            
-            if (data.type === 'cover') {
-                return `
+      function generateFace(data, sheetIdx, face) {
+        if (!data) return "";
+
+        if (data.type === "cover") {
+          return `
                     <img src="${assets.images.cover}" class="cover-img">
                     <h1 class="book-title">مغامرة أمجد ومشمش</h1>
                     <div class="cover-buttons">
@@ -529,9 +893,8 @@
                             <i class="fas fa-play"></i> ابدأ القصة
                         </button>
                     </div>`;
-            } 
-            else if (data.type === 'personal-data') {
-                return `
+        } else if (data.type === "personal-data") {
+          return `
                 <div class="text-container">
                     <div class="profile-card">
                         <img src="${assets.images.profile}" class="profile-img" onerror="this.src='https://via.placeholder.com/100?text=Student'">
@@ -547,9 +910,8 @@
                         </div>
                     </div>
                 </div>`;
-            }
-            else if (data.type === 'book-desc') {
-                return `
+        } else if (data.type === "book-desc") {
+          return `
                 <div class="text-container" style="justify-content: flex-start; padding: 10px;">
                     <div class="desc-wrapper">
                         <div class="desc-box">
@@ -584,188 +946,258 @@
                                 <span class="desc-key">التفاعل:</span><br>
                                 <span class="desc-val">تقليب الصفحات، مشاهدة الفيديوهات، حل الألغاز، ولعبة الذاكرة.</span>
                             </div>
+
+                            <div class="desc-section">
+                                <span class="desc-key">الادوات المستخدمة:</span><br>
+                                <span class="desc-val">
+                            JavaScript - Gemini ai - meta ai - lahajati ai
+
+                                  
+                                  </span>
+                            </div>
                         </div>
                     </div>
                 </div>`;
-            }
-            else if (data.type === 'video-page') {
-                let vidSrc = assets.video[data.id] || '';
-                const vidId = `vid-${sheetIdx}-${face}`;
-                if (vidSrc.includes('mediafire.com') || !vidSrc) {
-                     return `<div class="page-video-container"><div class="video-fallback"><i class="fas fa-landmark text-4xl mb-3 text-yellow-500"></i><p class="mb-4 text-lg">فيديو ${data.id}</p>${vidSrc ? `<a href="${vidSrc}" target="_blank" class="fallback-btn"><i class="fas fa-play"></i> مشاهدة</a>` : ''}</div></div>`;
-                }
-                return `<div class="page-video-container"><video id="${vidId}" class="page-video" data-src="${vidSrc}" loop muted playsinline preload="none" onerror="handleVideoError(this, '${vidSrc}')"></video></div>`;
-            }
-            else if (data.type === 'quiz-part') {
-                return `<div class="text-container"><div class="game-title"><i class="fas fa-question-circle"></i> لغز أثري!</div><div class="text-content" style="font-size:1.2rem; margin-bottom:1rem">${data.data.question}</div>${data.data.options.map((opt, idx) => `<div class="quiz-option" onclick="checkAnswer(this, ${idx === data.data.correct})">${opt}</div>`).join('')}</div>`;
-            }
-            else if (data.type === 'memory-game') {
-                const icons = [...data.cards, ...data.cards].sort(() => 0.5 - Math.random());
-                const cardsHTML = icons.map((icon, idx) => `<div class="mem-card" onclick="flipCard(this, '${icon}')" data-icon="${icon}"><i class="fas fa-fingerprint"></i><i class="${icon} hidden absolute text-3xl"></i></div>`).join('');
-                return `<div class="text-container"><div class="game-title"><i class="fas fa-puzzle-piece"></i> ذاكرة الفراعنة</div><p style="font-size:0.9rem; margin-bottom:10px; color:#555;">اجمع الرموز المتشابهة</p><div class="memory-grid">${cardsHTML}</div></div>`;
-            }
-            else if (data.type === 'back-cover') {
-                return `<img src="${assets.images.back}" class="cover-img">`;
-            }
-            else if (data.text) {
-                return `<div class="text-container"><div class="page-header">صفحة ${data.id}</div><p class="text-content">${data.text}</p></div>`;
-            }
-            return `<div class="text-container"></div>`;
+        } else if (data.type === "video-page") {
+          let vidSrc = assets.video[data.id] || "";
+          const vidId = `vid-${sheetIdx}-${face}`;
+          if (vidSrc.includes("mediafire.com") || !vidSrc) {
+            return `<div class="page-video-container"><div class="video-fallback"><i class="fas fa-landmark text-4xl mb-3 text-yellow-500"></i><p class="mb-4 text-lg">فيديو ${
+              data.id
+            }</p>${
+              vidSrc
+                ? `<a href="${vidSrc}" target="_blank" class="fallback-btn"><i class="fas fa-play"></i> مشاهدة</a>`
+                : ""
+            }</div></div>`;
+          }
+          return `<div class="page-video-container"><video id="${vidId}" class="page-video" data-src="${vidSrc}" loop muted playsinline preload="none" onerror="handleVideoError(this, '${vidSrc}')"></video></div>`;
+        } else if (data.type === "quiz-part") {
+          return `<div class="text-container"><div class="game-title"><i class="fas fa-question-circle"></i> لغز أثري!</div><div class="text-content" style="font-size:1.2rem; margin-bottom:1rem">${
+            data.data.question
+          }</div>${data.data.options
+            .map(
+              (opt, idx) =>
+                `<div class="quiz-option" onclick="checkAnswer(this, ${
+                  idx === data.data.correct
+                })">${opt}</div>`
+            )
+            .join("")}</div>`;
+        } else if (data.type === "memory-game") {
+          const icons = [...data.cards, ...data.cards].sort(
+            () => 0.5 - Math.random()
+          );
+          const cardsHTML = icons
+            .map(
+              (icon, idx) =>
+                `<div class="mem-card" onclick="flipCard(this, '${icon}')" data-icon="${icon}"><i class="fas fa-fingerprint"></i><i class="${icon} hidden absolute text-3xl"></i></div>`
+            )
+            .join("");
+          return `<div class="text-container"><div class="game-title"><i class="fas fa-puzzle-piece"></i> ذاكرة الفراعنة</div><p style="font-size:0.9rem; margin-bottom:10px; color:#555;">اجمع الرموز المتشابهة</p><div class="memory-grid">${cardsHTML}</div></div>`;
+        } else if (data.type === "back-cover") {
+          return `<img src="${assets.images.back}" class="cover-img">`;
+        } else if (data.text) {
+          return `<div class="text-container"><div class="page-header">صفحة ${data.id}</div><p class="text-content">${data.text}</p></div>`;
         }
+        return `<div class="text-container"></div>`;
+      }
 
-        function checkAnswer(btn, isCorrect) {
-            if (btn.classList.contains('correct') || btn.classList.contains('wrong')) return; 
-            if (isCorrect) {
-                btn.classList.add('correct');
-                score += 10;
-                document.getElementById('scoreVal').innerText = score;
-                document.getElementById('sfxWin').play().catch(()=>{});
+      function checkAnswer(btn, isCorrect) {
+        if (
+          btn.classList.contains("correct") ||
+          btn.classList.contains("wrong")
+        )
+          return;
+        if (isCorrect) {
+          btn.classList.add("correct");
+          score += 10;
+          document.getElementById("scoreVal").innerText = score;
+          document
+            .getElementById("sfxWin")
+            .play()
+            .catch(() => {});
+        } else {
+          btn.classList.add("wrong");
+          document
+            .getElementById("sfxWrong")
+            .play()
+            .catch(() => {});
+        }
+      }
+
+      function flipCard(card, icon) {
+        if (
+          locked ||
+          card.classList.contains("flipped") ||
+          card.classList.contains("matched")
+        )
+          return;
+        card.classList.add("flipped");
+        card.innerHTML = `<i class="${icon}"></i>`;
+        flippedCards.push(card);
+        if (flippedCards.length === 2) {
+          locked = true;
+          setTimeout(checkMatch, 800);
+        }
+      }
+
+      function checkMatch() {
+        const [c1, c2] = flippedCards;
+        if (c1.dataset.icon === c2.dataset.icon) {
+          c1.classList.add("matched");
+          c2.classList.add("matched");
+          score += 20;
+          document.getElementById("scoreVal").innerText = score;
+          document
+            .getElementById("sfxWin")
+            .play()
+            .catch(() => {});
+        } else {
+          c1.classList.remove("flipped");
+          c2.classList.remove("flipped");
+          c1.innerHTML = `<i class="fas fa-fingerprint"></i>`;
+          c2.innerHTML = `<i class="fas fa-fingerprint"></i>`;
+          document
+            .getElementById("sfxWrong")
+            .play()
+            .catch(() => {});
+        }
+        flippedCards = [];
+        locked = false;
+      }
+
+      function startStory(e) {
+        if (e) e.stopPropagation();
+        if (!firstInteraction) {
+          firstInteraction = true;
+          isPlaying = true;
+          if (audioEl.context && audioEl.context.state === "suspended")
+            audioEl.context.resume();
+          document.getElementById("playPauseBtn").innerHTML =
+            '<i class="fas fa-pause"></i>';
+          updateBook();
+        }
+      }
+
+      function goToPage(sheetIndex) {
+        const target = sheetIndex;
+        if (currentPage < target) {
+          const interval = setInterval(() => {
+            if (currentPage < target) nextPage();
+            else clearInterval(interval);
+          }, 300);
+        } else if (currentPage > target) {
+          const interval = setInterval(() => {
+            if (currentPage > target) prevPage();
+            else clearInterval(interval);
+          }, 300);
+        }
+      }
+
+      function nextPage() {
+        if (currentPage < Math.ceil(storyConfig.length / 2)) {
+          currentPage++;
+          updateBook();
+        }
+      }
+
+      function prevPage() {
+        if (currentPage > 0) {
+          currentPage--;
+          updateBook();
+        }
+      }
+
+      function handleVideoError(v, src) {
+        v.style.display = "none";
+        v.parentElement.innerHTML = `<div class="video-fallback"><i class="fas fa-exclamation-triangle text-yellow-500 text-3xl"></i><p class="mt-2 text-white">فيديو غير متاح</p></div>`;
+      }
+
+      function manageVideoResources() {
+        const activePages = [currentPage - 1, currentPage, currentPage + 1];
+        document.querySelectorAll("video").forEach((vid) => {
+          const parts = vid.id.split("-");
+          if (parts.length >= 3) {
+            const sheetIdx = parseInt(parts[1]);
+            if (activePages.includes(sheetIdx)) {
+              if (!vid.getAttribute("src") && vid.dataset.src) {
+                vid.src = vid.dataset.src;
+                vid.load();
+              }
             } else {
-                btn.classList.add('wrong');
-                document.getElementById('sfxWrong').play().catch(()=>{});
+              if (vid.getAttribute("src")) {
+                vid.pause();
+                vid.removeAttribute("src");
+                vid.load();
+              }
             }
-        }
-
-        function flipCard(card, icon) {
-            if(locked || card.classList.contains('flipped') || card.classList.contains('matched')) return;
-            card.classList.add('flipped');
-            card.innerHTML = `<i class="${icon}"></i>`;
-            flippedCards.push(card);
-            if(flippedCards.length === 2) {
-                locked = true;
-                setTimeout(checkMatch, 800);
-            }
-        }
-
-        function checkMatch() {
-            const [c1, c2] = flippedCards;
-            if(c1.dataset.icon === c2.dataset.icon) {
-                c1.classList.add('matched');
-                c2.classList.add('matched');
-                score += 20;
-                document.getElementById('scoreVal').innerText = score;
-                document.getElementById('sfxWin').play().catch(()=>{});
-            } else {
-                c1.classList.remove('flipped');
-                c2.classList.remove('flipped');
-                c1.innerHTML = `<i class="fas fa-fingerprint"></i>`;
-                c2.innerHTML = `<i class="fas fa-fingerprint"></i>`;
-                document.getElementById('sfxWrong').play().catch(()=>{});
-            }
-            flippedCards = [];
-            locked = false;
-        }
-
-        function startStory(e) {
-            if(e) e.stopPropagation();
-            if (!firstInteraction) {
-                firstInteraction = true;
-                isPlaying = true;
-                if(audioEl.context && audioEl.context.state === 'suspended') audioEl.context.resume();
-                document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i>';
-                updateBook();
-            }
-        }
-
-        function goToPage(sheetIndex) {
-            const target = sheetIndex; 
-            if(currentPage < target) {
-                 const interval = setInterval(() => {
-                    if(currentPage < target) nextPage(); else clearInterval(interval);
-                }, 300);
-            } else if (currentPage > target) {
-                 const interval = setInterval(() => {
-                    if(currentPage > target) prevPage(); else clearInterval(interval);
-                }, 300);
-            }
-        }
-
-        function nextPage() {
-            if (currentPage < Math.ceil(storyConfig.length / 2)) { currentPage++; updateBook(); }
-        }
-
-        function prevPage() {
-            if (currentPage > 0) { currentPage--; updateBook(); }
-        }
-
-        function handleVideoError(v, src) {
-            v.style.display = 'none';
-            v.parentElement.innerHTML = `<div class="video-fallback"><i class="fas fa-exclamation-triangle text-yellow-500 text-3xl"></i><p class="mt-2 text-white">فيديو غير متاح</p></div>`;
-        }
-
-        function manageVideoResources() {
-            const activePages = [currentPage - 1, currentPage, currentPage + 1];
-            document.querySelectorAll('video').forEach(vid => {
-                const parts = vid.id.split('-');
-                if(parts.length >= 3) {
-                    const sheetIdx = parseInt(parts[1]);
-                    if(activePages.includes(sheetIdx)) {
-                         if(!vid.getAttribute('src') && vid.dataset.src) {
-                            vid.src = vid.dataset.src;
-                            vid.load();
-                        }
-                    } else {
-                        if(vid.getAttribute('src')) {
-                            vid.pause();
-                            vid.removeAttribute('src');
-                            vid.load(); 
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateBook() {
-            const numSheets = Math.ceil(storyConfig.length / 2);
-            document.getElementById('pageIndicator').innerText = `${currentPage} / ${numSheets}`;
-            const pages = document.querySelectorAll('.page');
-            pages.forEach((p, index) => {
-                if (index < currentPage) {
-                    p.classList.add('flipped'); p.style.zIndex = index; 
-                } else {
-                    p.classList.remove('flipped'); p.style.zIndex = numSheets - index; 
-                }
-            });
-            manageVideoResources();
-            document.querySelectorAll('video').forEach(v => v.pause());
-            if(isPlaying) {
-                let leftVid = document.querySelector(`#vid-${currentPage-1}-back`);
-                if(leftVid) { leftVid.muted=false; leftVid.currentTime=0; leftVid.play().catch(e => {}); }
-                let visibleIndexRight = currentPage * 2;
-                if(visibleIndexRight < storyConfig.length) playAudioForPage(visibleIndexRight);
-            } else {
-                audioEl.pause();
-            }
-        }
-
-        function playAudioForPage(idx) {
-            let pageData = storyConfig[idx];
-            if (pageData && pageData.id && assets.audio[pageData.id]) {
-                audioEl.src = assets.audio[pageData.id];
-                audioEl.play().catch(e => {});
-            } else {
-                audioEl.pause();
-            }
-        }
-
-        function togglePlayPause() {
-            isPlaying = !isPlaying;
-            document.getElementById('playPauseBtn').innerHTML = isPlaying ? '<i class="fas fa-pause"></i>' : '<i class="fas fa-play"></i>';
-            updateBook(); 
-        }
-
-        function toggleMute() {
-            let isMuted = !audioEl.muted; 
-            audioEl.muted = isMuted;
-            document.querySelectorAll('video').forEach(v => v.muted = isMuted);
-            document.getElementById('muteBtn').innerHTML = isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
-        }
-
-        initBook();
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowRight') nextPage();
-            if (e.key === 'ArrowLeft') prevPage();
+          }
         });
+      }
+
+      function updateBook() {
+        const numSheets = Math.ceil(storyConfig.length / 2);
+        document.getElementById(
+          "pageIndicator"
+        ).innerText = `${currentPage} / ${numSheets}`;
+        const pages = document.querySelectorAll(".page");
+        pages.forEach((p, index) => {
+          if (index < currentPage) {
+            p.classList.add("flipped");
+            p.style.zIndex = index;
+          } else {
+            p.classList.remove("flipped");
+            p.style.zIndex = numSheets - index;
+          }
+        });
+        manageVideoResources();
+        document.querySelectorAll("video").forEach((v) => v.pause());
+        if (isPlaying) {
+          let leftVid = document.querySelector(`#vid-${currentPage - 1}-back`);
+          if (leftVid) {
+            leftVid.muted = false;
+            leftVid.currentTime = 0;
+            leftVid.play().catch((e) => {});
+          }
+          let visibleIndexRight = currentPage * 2;
+          if (visibleIndexRight < storyConfig.length)
+            playAudioForPage(visibleIndexRight);
+        } else {
+          audioEl.pause();
+        }
+      }
+
+      function playAudioForPage(idx) {
+        let pageData = storyConfig[idx];
+        if (pageData && pageData.id && assets.audio[pageData.id]) {
+          audioEl.src = assets.audio[pageData.id];
+          audioEl.play().catch((e) => {});
+        } else {
+          audioEl.pause();
+        }
+      }
+
+      function togglePlayPause() {
+        isPlaying = !isPlaying;
+        document.getElementById("playPauseBtn").innerHTML = isPlaying
+          ? '<i class="fas fa-pause"></i>'
+          : '<i class="fas fa-play"></i>';
+        updateBook();
+      }
+
+      function toggleMute() {
+        let isMuted = !audioEl.muted;
+        audioEl.muted = isMuted;
+        document.querySelectorAll("video").forEach((v) => (v.muted = isMuted));
+        document.getElementById("muteBtn").innerHTML = isMuted
+          ? '<i class="fas fa-volume-mute"></i>'
+          : '<i class="fas fa-volume-up"></i>';
+      }
+
+      initBook();
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowRight") nextPage();
+        if (e.key === "ArrowLeft") prevPage();
+      });
     </script>
-</body>
+  </body>
 </html>
